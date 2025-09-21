@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { useRef, useMemo, useState, useEffect } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { Environment } from "@react-three/drei";
-import { EffectComposer, N8AO } from "@react-three/postprocessing";
+import { EffectComposer, N8AO, Bloom } from "@react-three/postprocessing";
 import {
   BallCollider,
   Physics,
@@ -22,10 +22,13 @@ const imageUrls = [
   "/images/typescript.webp",
   "/images/javascript.webp",
 ];
-const textures = imageUrls.map((url) => textureLoader.load(url));
+const textures = imageUrls.map((url) => {
+  const tex = textureLoader.load(url);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+});
 
 const sphereGeometry = new THREE.SphereGeometry(1, 28, 28);
-
 const spheres = [...Array(30)].map(() => ({
   scale: [0.7, 1, 0.8, 1, 1][Math.floor(Math.random() * 5)],
 }));
@@ -60,7 +63,6 @@ function SphereGeo({
           -50 * delta * scale
         )
       );
-
     api.current?.applyImpulse(impulse, true);
   });
 
@@ -91,14 +93,10 @@ function SphereGeo({
   );
 }
 
-type PointerProps = {
-  vec?: THREE.Vector3;
-  isActive: boolean;
-};
+type PointerProps = { vec?: THREE.Vector3; isActive: boolean };
 
 function Pointer({ vec = new THREE.Vector3(), isActive }: PointerProps) {
   const ref = useRef<RapierRigidBody>(null);
-
   useFrame(({ pointer, viewport }) => {
     if (!isActive) return;
     const targetVec = vec.lerp(
@@ -111,7 +109,6 @@ function Pointer({ vec = new THREE.Vector3(), isActive }: PointerProps) {
     );
     ref.current?.setNextKinematicTranslation(targetVec);
   });
-
   return (
     <RigidBody
       position={[100, 100, 100]}
@@ -128,43 +125,33 @@ const TechStack = () => {
   const [isActive, setIsActive] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => {
-      const scrollY = window.scrollY || document.documentElement.scrollTop;
-      const threshold = document
-        .getElementById("work")!
-        .getBoundingClientRect().top;
-      setIsActive(scrollY > threshold);
+    const workEl = document.getElementById("work");
+    if (!workEl) return;
+    const onScroll = () => {
+      const top = workEl.getBoundingClientRect().top;
+      setIsActive(top < window.innerHeight * 0.6);
     };
-    document.querySelectorAll(".header a").forEach((elem) => {
-      const element = elem as HTMLAnchorElement;
-      element.addEventListener("click", () => {
-        const interval = setInterval(() => {
-          handleScroll();
-        }, 10);
-        setTimeout(() => {
-          clearInterval(interval);
-        }, 1000);
-      });
-    });
-    window.addEventListener("scroll", handleScroll);
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
-  const materials = useMemo(() => {
-    return textures.map(
-      (texture) =>
-        new THREE.MeshPhysicalMaterial({
-          map: texture,
-          emissive: "#ffffff",
-          emissiveMap: texture,
-          emissiveIntensity: 0.3,
-          metalness: 0.5,
-          roughness: 1,
-          clearcoat: 0.1,
-        })
-    );
-  }, []);
+
+  const materials = useMemo(
+    () =>
+      textures.map(
+        (texture) =>
+          new THREE.MeshPhysicalMaterial({
+            map: texture,
+            emissive: "#ffffff",
+            emissiveMap: texture,
+            emissiveIntensity: 0.45, // a touch stronger for glow
+            metalness: 0.5,
+            roughness: 1,
+            clearcoat: 0.1,
+          })
+      ),
+    []
+  );
 
   return (
     <div className="techstack">
@@ -172,12 +159,18 @@ const TechStack = () => {
 
       <Canvas
         shadows
-        gl={{ alpha: true, stencil: false, depth: false, antialias: false }}
+        gl={{ alpha: true, antialias: true, depth: true }}
         camera={{ position: [0, 0, 20], fov: 32.5, near: 1, far: 100 }}
-        onCreated={(state) => (state.gl.toneMappingExposure = 1.5)}
+        onCreated={(state) => {
+          const gl = state.gl;
+          gl.outputColorSpace = THREE.SRGBColorSpace;
+          gl.toneMapping = THREE.ACESFilmicToneMapping;
+          gl.toneMappingExposure = 1.5; // punchier contrast like the demo
+          gl.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+        }}
         className="tech-canvas"
       >
-        <ambientLight intensity={1} />
+        <ambientLight intensity={0.6} />
         <spotLight
           position={[20, 20, 25]}
           penumbra={1}
@@ -186,7 +179,8 @@ const TechStack = () => {
           castShadow
           shadow-mapSize={[512, 512]}
         />
-        <directionalLight position={[0, 5, -4]} intensity={2} />
+        <directionalLight position={[0, 5, -4]} intensity={1.4} />
+
         <Physics gravity={[0, 0, 0]}>
           <Pointer isActive={isActive} />
           {spheres.map((props, i) => (
@@ -198,13 +192,17 @@ const TechStack = () => {
             />
           ))}
         </Physics>
+
         <Environment
           files="/models/char_enviorment.hdr"
-          environmentIntensity={0.5}
+          environmentIntensity={0.55}
           environmentRotation={[0, 4, 2]}
         />
+
         <EffectComposer enableNormalPass={false}>
+          {/* AO adds depth; Bloom brings the purple glow back */}
           <N8AO color="#0f002c" aoRadius={2} intensity={1.15} />
+          <Bloom intensity={1.0} luminanceThreshold={0.7} mipmapBlur />
         </EffectComposer>
       </Canvas>
     </div>
