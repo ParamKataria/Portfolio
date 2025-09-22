@@ -221,7 +221,7 @@
  *  - Focus ring / highlight: #7a3cff
  */
 
-import React from "react";
+// import React from "react";
 import "./styles/techstack-text.css";
 
 type StackRow = {
