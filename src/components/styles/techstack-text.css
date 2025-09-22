@@ -1,0 +1,107 @@
+/* ===== Colors aligned with your site ===== */
+:root{
+  --accentColor: #7f40ff; /* uses your site's var if defined */
+}
+
+/* SECTION */
+.tstc-section{
+  position:relative;
+  margin:auto;
+  padding:120px 0;
+}
+
+/* soft purple ambience (no center line) */
+.tstc-section::before{
+  content:"";
+  position:absolute;
+  inset:-8% -4% auto -4%;
+  height:60%;
+  z-index:-1;
+  background:radial-gradient(60% 50% at 50% 0%,
+    rgba(15,0,44,0.45),
+    rgba(15,0,44,0.15) 60%,
+    transparent 80%);
+  filter:blur(24px);
+}
+
+/* GRADIENT HEADING like your career section */
+.tstc-heading{
+  font-size:70px; line-height:70px; font-weight:400; text-align:center;
+  background:linear-gradient(0deg, var(--accentColor), #ffffff);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+  margin:50px 0 90px;
+}
+.tstc-heading>span{
+  font-family:"Geist",sans-serif; font-weight:300; text-transform:capitalize;
+}
+
+/* DESKTOP GRID (3 columns: left | middle badge | right) */
+.tstc-grid{
+  max-width:1200px; margin:0 auto; padding:0 24px;
+  display:grid; gap:56px 64px;
+}
+.tstc-row{
+  display:grid;
+  grid-template-columns: 1fr 220px 1.2fr;
+  align-items:center;
+  opacity:0; transform:translateY(12px);
+  animation:fadeUp 560ms cubic-bezier(.22,.94,.31,1) forwards;
+  animation-delay:calc(80ms * var(--i,0));
+}
+@keyframes fadeUp{ to{ opacity:1; transform:translateY(0);} }
+
+/* LEFT */
+.tstc-left-title{
+  margin:0; font-size:40px; line-height:38px; font-weight:500; color:#fff;
+}
+.tstc-left-sub{ margin:10px 0 0; font-size:18px; color:var(--accentColor); }
+
+/* MIDDLE BADGE (replaces big words + vertical line) */
+.tstc-mid{ justify-self:center; }
+.tstc-badge{
+  display:inline-block; padding:10px 16px; border-radius:999px;
+  letter-spacing:1.5px; font-weight:800; font-size:28px;
+  color:#eae6ff; text-transform:uppercase;
+  background:linear-gradient(180deg, rgba(127,64,255,0.22), rgba(127,64,255,0.12));
+  border:1px solid rgba(255,255,255,0.1);
+  box-shadow:0 0 8px rgba(170,66,255,0.25), inset 0 0 24px rgba(170,66,255,0.15);
+  transition:transform .18s ease, filter .18s ease, box-shadow .18s ease;
+}
+.tstc-row:hover .tstc-badge{
+  transform:translateY(-2px); filter:brightness(1.05);
+  box-shadow:0 0 12px rgba(170,66,255,0.35), inset 0 0 28px rgba(170,66,255,0.2);
+}
+
+/* RIGHT */
+.tstc-right p{ margin:0; font-size:18px; line-height:1.7; color:rgba(255,255,255,.72); }
+
+/* subtle row hover */
+.tstc-row:hover .tstc-left-title,
+.tstc-row:hover .tstc-right p{ filter:brightness(1.05); }
+
+/* ===== RESPONSIVE: card layout on mobile (won’t disappear) ===== */
+@media (max-width:1200px){
+  .tstc-left-title{ font-size:34px; line-height:34px; }
+  .tstc-badge{ font-size:24px; }
+}
+@media (max-width:900px){
+  .tstc-grid{ gap:24px; }
+  .tstc-row{
+    grid-template-columns:1fr;
+    gap:10px;
+    padding:16px 18px;
+    border:1px solid rgba(255,255,255,0.08);
+    border-radius:18px;
+    background:rgba(255,255,255,0.04);
+    backdrop-filter:blur(2px);
+    box-shadow:0 10px 30px rgba(0,0,0,.35);
+  }
+  .tstc-mid{ justify-self:start; }
+  .tstc-left-title{ font-size:28px; line-height:30px; }
+  .tstc-left-sub{ font-size:15px; }
+  .tstc-badge{ font-size:18px; padding:8px 12px; }
+  .tstc-right p{ font-size:16px; }
+}
+@media (max-width:600px){
+  .tstc-heading{ font-size:50px; line-height:50px; margin-top:0; }
+}
